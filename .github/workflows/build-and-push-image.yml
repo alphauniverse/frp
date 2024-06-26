@@ -2,13 +2,13 @@ name: Build Image and Publish to Dockerhub & GPR
 
 on:
   release:
-    types: [ published ]
+    types: [ created ]
   workflow_dispatch:
     inputs:
       tag:
         description: 'Image tag'
         required: true
-        default: 'test'
+        default: 'latest'
 permissions:
   contents: read
 
@@ -55,17 +55,17 @@ jobs:
         run: |
           echo "DOCKERFILE_FRPC_PATH=dockerfiles/Dockerfile-for-frpc" >> $GITHUB_ENV
           echo "DOCKERFILE_FRPS_PATH=dockerfiles/Dockerfile-for-frps" >> $GITHUB_ENV
-          echo "TAG_FRPC=fatedier/frpc:${{ env.TAG_NAME }}" >> $GITHUB_ENV
-          echo "TAG_FRPS=fatedier/frps:${{ env.TAG_NAME }}" >> $GITHUB_ENV
-          echo "TAG_FRPC_GPR=ghcr.io/fatedier/frpc:${{ env.TAG_NAME }}" >> $GITHUB_ENV
-          echo "TAG_FRPS_GPR=ghcr.io/fatedier/frps:${{ env.TAG_NAME }}" >> $GITHUB_ENV
+          echo "TAG_FRPC=autokube/frpc:${{ env.TAG_NAME }}" >> $GITHUB_ENV
+          echo "TAG_FRPS=autokube/frps:${{ env.TAG_NAME }}" >> $GITHUB_ENV
+          echo "TAG_FRPC_GPR=ghcr.io/alphauniverse/frpc:${{ env.TAG_NAME }}" >> $GITHUB_ENV
+          echo "TAG_FRPS_GPR=ghcr.io/alphauniverse/frps:${{ env.TAG_NAME }}" >> $GITHUB_ENV
 
       - name: Build and push frpc
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./dockerfiles/Dockerfile-for-frpc
-          platforms: linux/amd64,linux/arm/v7,linux/arm64,linux/ppc64le,linux/s390x
+          platforms: linux/amd64,linux/arm64
           push: true
           tags: |
             ${{ env.TAG_FRPC }}
@@ -76,7 +76,7 @@ jobs:
         with:
           context: .
           file: ./dockerfiles/Dockerfile-for-frps
-          platforms: linux/amd64,linux/arm/v7,linux/arm64,linux/ppc64le,linux/s390x
+          platforms: linux/amd64,linux/arm64
           push: true
           tags: |
             ${{ env.TAG_FRPS }}
