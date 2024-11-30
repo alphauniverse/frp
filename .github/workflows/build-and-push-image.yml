@@ -45,13 +45,6 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
-      - name: Login to the GPR
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GPR_TOKEN }}
-
       # prepare image tags
       - name: Prepare Image Tags
         run: |
@@ -59,8 +52,6 @@ jobs:
           echo "DOCKERFILE_FRPS_PATH=dockerfiles/Dockerfile-for-frps" >> $GITHUB_ENV
           echo "TAG_FRPC=${{ secrets.DOCKERHUB_USERNAME }}/frpc:${{ env.TAG_NAME }}" >> $GITHUB_ENV
           echo "TAG_FRPS=${{ secrets.DOCKERHUB_USERNAME }}/frps:${{ env.TAG_NAME }}" >> $GITHUB_ENV
-          echo "TAG_FRPC_GPR=ghcr.io/alphauniverse/frpc:${{ env.TAG_NAME }}" >> $GITHUB_ENV
-          echo "TAG_FRPS_GPR=ghcr.io/alphauniverse/frps:${{ env.TAG_NAME }}" >> $GITHUB_ENV
 
       - name: Build and push frpc
         uses: docker/build-push-action@v5
