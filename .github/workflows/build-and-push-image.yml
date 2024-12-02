@@ -71,6 +71,7 @@ jobs:
         with:
           name: release-version
           path: release_version.txt
+          overwrite: true
 
       # 6. Only run the following steps if there is a new release
       - name: Setup Docker Environment
@@ -79,7 +80,7 @@ jobs:
           echo "Setting up Docker Buildx and QEMU"
           echo "DOCKERFILE_FRPC_PATH=dockerfiles/Dockerfile-for-frpc" >> $GITHUB_ENV
           echo "DOCKERFILE_FRPS_PATH=dockerfiles/Dockerfile-for-frps" >> $GITHUB_ENV
-        
+
       - name: Set up QEMU
         if: env.continue == 'true'
         uses: docker/setup-qemu-action@v3
