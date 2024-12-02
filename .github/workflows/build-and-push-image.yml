@@ -1,14 +1,15 @@
 name: Build Image and Publish to Dockerhub
 
 on:
-  release:
-    types: [ created ]
+  schedule:
+    - cron: '0 0 * * *'
   workflow_dispatch:
     inputs:
       tag:
         description: 'Image tag'
         required: true
         default: 'latest'
+
 permissions:
   contents: read
 
@@ -17,60 +18,88 @@ jobs:
     name: Build Image from Dockerfile and binaries
     runs-on: ubuntu-latest
     steps:
-      # environment
+      # 1. Checkout source code
       - name: Checkout
         uses: actions/checkout@v4
         with:
           repository: fatedier/frp
           ref: master
           fetch-depth: '0'
+      
+      # 2. Get the latest release version and check for changes
+      - name: Check for New Release
+        id: check_release
+        run: |
+          set -e # 使脚本在任何命令失败时退出
+          latest_release=$(curl -s https://api.github.com/repos/fatedier/frp/releases/latest | jq -r .tag_name)
 
+          if [ -z "$latest_release" ]; then
+            echo "Failed to fetch latest release."
+            exit 1
+          fi
+
+          echo "LATEST_RELEASE=${latest_release}" >> $GITHUB_ENV
+
+          if [ -f release_version.txt ]; then
+            last_release=$(cat release_version.txt)
+            if [ "$last_release" = "${latest_release}" ]; then
+              echo "No new release."
+              echo "continue=false" >> $GITHUB_ENV
+              exit 0
+            fi
+          fi
+
+          echo "${latest_release}" > release_version.txt
+          echo "continue=true" >> $GITHUB_ENV
+
+      # 3. Upload the release_version.txt as an artifact
+      - name: Upload Release Version
+        if: env.continue == 'true'
+        uses: actions/upload-artifact@v3
+        with:
+          name: release-version
+          path: release_version.txt
+
+      # 4. Only run the following steps if there is a new release
+      - name: Setup Docker Environment
+        if: env.continue == 'true'
+        run: |
+          echo "Setting up Docker Buildx and QEMU"
+          echo "DOCKERFILE_FRPC_PATH=dockerfiles/Dockerfile-for-frpc" >> $GITHUB_ENV
+          echo "DOCKERFILE_FRPS_PATH=dockerfiles/Dockerfile-for-frps" >> $GITHUB_ENV
+        
       - name: Set up QEMU
+        if: env.continue == 'true'
         uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
+        if: env.continue == 'true'
         uses: docker/setup-buildx-action@v3
 
-      # get image tag name
-      - name: Get Image Tag Name
-        run: |
-          if [ x${{ github.event.inputs.tag }} == x"" ]; then
-            echo "TAG_NAME=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
-          else
-            echo "TAG_NAME=${{ github.event.inputs.tag }}" >> $GITHUB_ENV
-          fi
+      # 5. Login to DockerHub
       - name: Login to DockerHub
+        if: env.continue == 'true'
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
-      # prepare image tags
+      # 6. Prepare Image Tags
       - name: Prepare Image Tags
+        if: env.continue == 'true'
         run: |
-          echo "DOCKERFILE_FRPC_PATH=dockerfiles/Dockerfile-for-frpc" >> $GITHUB_ENV
-          echo "DOCKERFILE_FRPS_PATH=dockerfiles/Dockerfile-for-frps" >> $GITHUB_ENV
+          echo "TAG_NAME=${{ github.event.inputs.tag }}" >> $GITHUB_ENV
           echo "TAG_FRPC=${{ secrets.DOCKERHUB_USERNAME }}/frpc:${{ env.TAG_NAME }}" >> $GITHUB_ENV
           echo "TAG_FRPS=${{ secrets.DOCKERHUB_USERNAME }}/frps:${{ env.TAG_NAME }}" >> $GITHUB_ENV
 
-      - name: Build and push frpc
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./dockerfiles/Dockerfile-for-frpc
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: |
-            ${{ env.TAG_FRPC }}
-            ${{ env.TAG_FRPC_GPR }}
-
-      - name: Build and push frps
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./dockerfiles/Dockerfile-for-frps
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: |
-            ${{ env.TAG_FRPS }}
-            ${{ env.TAG_FRPS_GPR }}
+      # 7. Build and push images
+      - name: Build and push images
+        if: env.continue == 'true'
+        run: |
+          for service in frpc frps; do
+            echo "Building and pushing $service..."
+            if ! docker buildx build --platform linux/amd64,linux/arm64 --file ./dockerfiles/Dockerfile-for-${service} --tag ${{ env.DOCKERFILE_${service^^}_PATH }} --push .; then
+              echo "Failed to build and push $service."
+              exit 1
+            fi
+          done
