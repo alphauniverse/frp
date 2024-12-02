@@ -24,7 +24,6 @@ jobs:
         with:
           repository: fatedier/frp
           ref: master
-          fetch-depth: '0'
       
       # 2. Get the latest release version
       - name: Check for New Release
@@ -111,8 +110,11 @@ jobs:
         run: |
           for service in frpc frps; do
             echo "Building and pushing $service..."
-            if ! docker buildx build --platform linux/amd64,linux/arm64 --file ./dockerfiles/Dockerfile-for-${service} --tag ${{ env.DOCKERFILE_${service^^}_PATH }} --push .; then
+            DOCKERFILE_PATH="dockerfiles/Dockerfile-for-${service}"
+            if ! docker buildx build --platform linux/amd64,linux/arm64 --file $DOCKERFILE_PATH --tag ${{ secrets.DOCKERHUB_USERNAME }}/${service}:${{ env.TAG_NAME }} --push .; then
               echo "Failed to build and push $service."
               exit 1
             fi
           done
+
+          
