@@ -92,14 +92,16 @@ jobs:
           echo "TAG_FRPC=${{ secrets.DOCKERHUB_USERNAME }}/frpc:${{ env.TAG_NAME }}" >> $GITHUB_ENV
           echo "TAG_FRPS=${{ secrets.DOCKERHUB_USERNAME }}/frps:${{ env.TAG_NAME }}" >> $GITHUB_ENV
 
-      # 7. Build and push images
-      - name: Build and push images
+      # 7. 构建并推送镜像
+      - name: 构建并推送镜像
         if: env.continue == 'true'
         run: |
           for service in frpc frps; do
-            echo "Building and pushing $service..."
-            if ! docker buildx build --platform linux/amd64,linux/arm64 --file ./dockerfiles/Dockerfile-for-${service} --tag ${{ env.DOCKERFILE_${service^^}_PATH }} --push .; then
-              echo "Failed to build and push $service."
+            echo "正在构建并推送 $service..."
+            DOCKERFILE_PATH="dockerfiles/Dockerfile-for-${service}"
+            if ! docker buildx build --platform linux/amd64,linux/arm64 --file $DOCKERFILE_PATH --tag ${{ secrets.DOCKERHUB_USERNAME }}/${service}:${{ env.TAG_NAME }} --push .; then
+              echo "构建并推送 $service 失败."
               exit 1
             fi
           done
+
