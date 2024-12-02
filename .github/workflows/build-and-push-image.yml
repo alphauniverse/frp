@@ -39,13 +39,15 @@ jobs:
 
           echo "LATEST_RELEASE=${latest_release}" >> $GITHUB_ENV
 
-      # 3. Download the previous release_version.txt as an artifact
-      - name: Download Release Version
-        id: download_version
-        uses: actions/download-artifact@v4
+      # 3. Cache Release Version
+      - name: Cache Release Version
+        id: cache_version
+        uses: actions/cache@v4
         with:
-          name: release-version
-        continue-on-error: true # 允许下载失败，防止工作流中断
+          path: release_version.txt
+          key: release-version-${{ runner.os }}-${{ hashFiles('release_version.txt') }}
+          restore-keys: |
+            release-version-${{ runner.os }}-
 
       # 4. Compare the latest release with the previous version
       - name: Compare Versions
@@ -64,14 +66,12 @@ jobs:
           echo "${{ env.LATEST_RELEASE }}" > release_version.txt
           echo "continue=true" >> $GITHUB_ENV
 
-      # 5. Upload the release_version.txt as an artifact
-      - name: Upload Release Version
+      # 5. Save Release Version to Cache
+      - name: Save Release Version to Cache
         if: env.continue == 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: release-version
-          path: release_version.txt
-          overwrite: true
+        run: |
+          echo "${{ env.LATEST_RELEASE }}" > release_version.txt
+          echo "Saving release version to cache."
 
       # 6. Only run the following steps if there is a new release
       - name: Setup Docker Environment
@@ -117,5 +117,3 @@ jobs:
               exit 1
             fi
           done
-
-          
