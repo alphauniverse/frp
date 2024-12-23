@@ -36,7 +36,7 @@ jobs:
             echo "Failed to fetch latest release."
             exit 1
           fi
-
+          echo "Fetched latest release: $latest_release"
           echo "LATEST_RELEASE=${latest_release}" >> $GITHUB_ENV
 
       # 3. Load Cached Release Version
@@ -60,6 +60,8 @@ jobs:
               echo "continue=false" >> $GITHUB_ENV
               exit 0
             fi
+          else
+            echo "No cached version found."
           fi
           echo "New release detected: ${{ env.LATEST_RELEASE }}"
           echo "continue=true" >> $GITHUB_ENV
