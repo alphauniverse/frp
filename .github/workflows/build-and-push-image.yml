@@ -29,7 +29,7 @@ jobs:
       - name: Check for New Release
         id: check_release
         run: |
-          set -e # 使脚本在任何命令失败时退出
+          set -e
           latest_release=$(curl -s https://api.github.com/repos/fatedier/frp/releases/latest | jq -r .tag_name)
 
           if [ -z "$latest_release" ]; then
@@ -39,13 +39,13 @@ jobs:
 
           echo "LATEST_RELEASE=${latest_release}" >> $GITHUB_ENV
 
-      # 3. Cache Release Version
-      - name: Cache Release Version
-        id: cache_version
+      # 3. Load Cached Release Version
+      - name: Load Cached Release Version
+        id: load_cached_version
         uses: actions/cache@v4
         with:
           path: release_version.txt
-          key: release-version-${{ runner.os }}-${{ hashFiles('release_version.txt') }}
+          key: release-version-${{ runner.os }}
           restore-keys: |
             release-version-${{ runner.os }}-
 
@@ -53,17 +53,15 @@ jobs:
       - name: Compare Versions
         id: compare_version
         run: |
-          if [ -f release_version.txt ]; then
-            last_release=$(cat release_version.txt)
-            echo "LAST_RELEASE=${last_release}" >> $GITHUB_ENV
-            if [ "$last_release" = "${{ env.LATEST_RELEASE }}" ]; then
-              echo "No new release."
+          if [[ -f release_version.txt ]]; then
+            cached_version=$(cat release_version.txt)
+            if [[ "$cached_version" == "${{ env.LATEST_RELEASE }}" ]]; then
+              echo "No new release detected. Exiting."
               echo "continue=false" >> $GITHUB_ENV
               exit 0
             fi
           fi
-
-          echo "${{ env.LATEST_RELEASE }}" > release_version.txt
+          echo "New release detected: ${{ env.LATEST_RELEASE }}"
           echo "continue=true" >> $GITHUB_ENV
 
       # 5. Save Release Version to Cache
@@ -101,13 +99,11 @@ jobs:
       - name: Prepare Image Tags
         if: env.continue == 'true'
         run: |
-          if [ -z "${{ github.event.inputs.tag }}" ]; then
-            echo "TAG_NAME=latest" >> $GITHUB_ENV
-          else
-            echo "TAG_NAME=${{ github.event.inputs.tag }}" >> $GITHUB_ENV
-          fi
-          echo "TAG_FRPC=${{ secrets.DOCKERHUB_USERNAME }}/frpc:${{ env.TAG_NAME }}" >> $GITHUB_ENV
-          echo "TAG_FRPS=${{ secrets.DOCKERHUB_USERNAME }}/frps:${{ env.TAG_NAME }}" >> $GITHUB_ENV
+          # 使用传入的tag，如果没有则使用默认的latest
+          tag_name="${{ github.event.inputs.tag || 'latest' }}"
+          echo "TAG_NAME=${tag_name}" >> $GITHUB_ENV
+          echo "TAG_FRPC=${{ secrets.DOCKERHUB_USERNAME }}/frpc:${tag_name}" >> $GITHUB_ENV
+          echo "TAG_FRPS=${{ secrets.DOCKERHUB_USERNAME }}/frps:${tag_name}" >> $GITHUB_ENV
 
       # 9. Build and push images
       - name: Build and push images
