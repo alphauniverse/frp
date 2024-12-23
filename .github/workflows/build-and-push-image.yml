@@ -55,6 +55,7 @@ jobs:
         run: |
           if [[ -f release_version.txt ]]; then
             cached_version=$(cat release_version.txt)
+            echo "Cached release: $cached_release"
             if [[ "$cached_version" == "${{ env.LATEST_RELEASE }}" ]]; then
               echo "No new release detected. Exiting."
               echo "continue=false" >> $GITHUB_ENV
