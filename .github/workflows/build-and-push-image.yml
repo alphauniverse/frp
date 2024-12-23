@@ -115,7 +115,10 @@ jobs:
           for service in frpc frps; do
             echo "Building and pushing $service..."
             DOCKERFILE_PATH="dockerfiles/Dockerfile-for-${service}"
-            if ! docker buildx build --platform linux/amd64,linux/arm64 --file $DOCKERFILE_PATH --tag ${{ secrets.DOCKERHUB_USERNAME }}/${service}:${{ env.TAG_NAME }} --push .; then
+            if ! docker buildx build --platform linux/amd64,linux/arm64 --file $DOCKERFILE_PATH \
+              --tag ${{ secrets.DOCKERHUB_USERNAME }}/${service}:${{ env.TAG_NAME }} \
+              --tag ${{ secrets.DOCKERHUB_USERNAME }}/${service}:${{ env.LATEST_RELEASE }} \
+              --push .; then
               echo "Failed to build and push $service."
               exit 1
             fi
