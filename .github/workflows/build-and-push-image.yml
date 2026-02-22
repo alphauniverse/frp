@@ -2,7 +2,7 @@ name: Build Image and Publish to Dockerhub
 
 on:
   schedule:
-    - cron: '0 6 * * *'
+    - cron: '0 6 */5 * *'
   workflow_dispatch:
     inputs:
       tag:
