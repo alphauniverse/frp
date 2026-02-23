@@ -2,7 +2,7 @@ name: Build Image and Publish to Dockerhub
 
 on:
   schedule:
-    - cron: '0 6 */5 * *'  # 每5天 UTC 6:00 检查新版本
+    - cron: '0 6 * * *'  # 每5天 UTC 6:00 检查新版本
   workflow_dispatch:
     inputs:
       tag:
