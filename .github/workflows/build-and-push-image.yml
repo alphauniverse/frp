@@ -81,13 +81,6 @@ jobs:
           echo -n "${{ env.LATEST_RELEASE }}" > release_version.txt
           echo "💾 Saved version to cache file: ${{ env.LATEST_RELEASE }}"
 
-      - name: Save Release Version to Cache
-        if: env.continue == 'true'
-        uses: actions/cache/save@v5
-        with:
-          path: release_version.txt
-          key: release-version-${{ runner.os }}-${{ hashFiles('release_version.txt') }}
-
       - name: Checkout frp Repository
         if: env.continue == 'true'
         uses: actions/checkout@v6
