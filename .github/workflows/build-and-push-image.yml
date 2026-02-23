@@ -18,7 +18,7 @@ jobs:
     name: Build Multi-Arch Docker Images
     runs-on: ubuntu-latest
     env:
-      BUILD_PLATFORMS: linux/amd64,linux/arm64
+      BUILD_PLATFORMS: linux/amd64
     
     steps:
       - name: Install jq for JSON Parsing
@@ -74,12 +74,6 @@ jobs:
           echo "continue=$CONTINUE" >> $GITHUB_ENV
           # 使用现代方式设置 step output（虽未直接使用，但保留结构清晰性）
           echo "continue=$CONTINUE" >> $GITHUB_OUTPUT
-
-      - name: Save Current Release Version
-        if: env.continue == 'true'
-        run: |
-          echo -n "${{ env.LATEST_RELEASE }}" > release_version.txt
-          echo "💾 Saved version to cache file: ${{ env.LATEST_RELEASE }}"
 
       - name: Checkout frp Repository
         if: env.continue == 'true'
@@ -146,6 +140,12 @@ jobs:
             
             echo "✅ Successfully pushed $service images: ${tags[*]}"
           done
+
+      - name: Save Current Release Version
+        if: env.continue == 'true'
+        run: |
+          echo -n "${{ env.LATEST_RELEASE }}" > release_version.txt
+          echo "💾 Saved version to cache file: ${{ env.LATEST_RELEASE }}"
 
       - name: Save Release Version to Cache
         if: env.continue == 'true'
