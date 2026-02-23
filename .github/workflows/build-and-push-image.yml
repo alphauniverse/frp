@@ -44,7 +44,7 @@ jobs:
         uses: actions/cache@v5
         with:
           path: release_version.txt
-          key: release-version-${{ runner.os }}-${{ hashFiles('release_version.txt') }}
+          key: release-version-${{ runner.os }}-${{ hashFiles('release_version.txt') || 'default' }}
           restore-keys: |
             release-version-${{ runner.os }}-
             release-version-
@@ -78,7 +78,7 @@ jobs:
       - name: Save Current Release Version
         if: env.continue == 'true'
         run: |
-          echo "${{ env.LATEST_RELEASE }}" | tr -d '\r\n' > release_version.txt
+          echo -n "${{ env.LATEST_RELEASE }}" > release_version.txt
           echo "💾 Saved version to cache file: ${{ env.LATEST_RELEASE }}"
 
       - name: Checkout frp Repository
