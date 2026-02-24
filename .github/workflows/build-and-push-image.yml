@@ -113,33 +113,29 @@ jobs:
           echo "DOCKERHUB_USER=${{ secrets.DOCKERHUB_USERNAME }}" >> $GITHUB_ENV
           echo "🏷️  Building with tags: $TAG and ${{ env.LATEST_RELEASE }}"
 
-      - name: Build and Push Multi-Arch Images
+      - name: Build and Push frpc
         if: env.continue == 'true'
-        run: |
-          set -euo pipefail
-          for service in frpc frps; do
-            echo -e "\n🚀 Building $service for platforms: ${{ env.BUILD_PLATFORMS }}"
-            
-            tags=(
-              "${{ env.DOCKERHUB_USER }}/${service}:${{ env.TAG_NAME }}"
-              "${{ env.DOCKERHUB_USER }}/${service}:${{ env.LATEST_RELEASE }}"
-            )
-            
-            tag_args=()
-            for tag in "${tags[@]}"; do
-              tag_args+=(--tag "$tag")
-            done
-            
-            docker buildx build \
-              --platform ${{ env.BUILD_PLATFORMS }} \
-              --file "dockerfiles/Dockerfile-for-${service}" \
-              "${tag_args[@]}" \
-              --push \
-              --progress=plain \
-              .
-            
-            echo "✅ Successfully pushed $service images: ${tags[*]}"
-          done
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: ${{ env.BUILD_PLATFORMS }}
+          push: true
+          tags: |
+            ${{ env.DOCKERHUB_USER }}/frpc:${{ env.TAG_NAME }}
+            ${{ env.DOCKERHUB_USER }}/frpc:${{ env.LATEST_RELEASE }}
+          dockerfile: dockerfiles/Dockerfile-for-frpc
+
+      - name: Build and Push frps
+        if: env.continue == 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: ${{ env.BUILD_PLATFORMS }}
+          push: true
+          tags: |
+            ${{ env.DOCKERHUB_USER }}/frps:${{ env.TAG_NAME }}
+            ${{ env.DOCKERHUB_USER }}/frps:${{ env.LATEST_RELEASE }}
+          dockerfile: dockerfiles/Dockerfile-for-frps
 
       - name: Save Current Release Version
         if: env.continue == 'true'
