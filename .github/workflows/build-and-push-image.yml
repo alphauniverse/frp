@@ -123,7 +123,7 @@ jobs:
           tags: |
             ${{ env.DOCKERHUB_USER }}/frpc:${{ env.TAG_NAME }}
             ${{ env.DOCKERHUB_USER }}/frpc:${{ env.LATEST_RELEASE }}
-          dockerfile: dockerfiles/Dockerfile-for-frpc
+          file: dockerfiles/Dockerfile-for-frpc
 
       - name: Build and Push frps
         if: env.continue == 'true'
@@ -135,7 +135,7 @@ jobs:
           tags: |
             ${{ env.DOCKERHUB_USER }}/frps:${{ env.TAG_NAME }}
             ${{ env.DOCKERHUB_USER }}/frps:${{ env.LATEST_RELEASE }}
-          dockerfile: dockerfiles/Dockerfile-for-frps
+          file: dockerfiles/Dockerfile-for-frps
 
       - name: Save Current Release Version
         if: env.continue == 'true'
